@@ -56,9 +56,9 @@ return {blePresenceEnabled:document.getElementById('blePresence').checked,bleFan
 async function save(){try{let result=await api('/api/config','POST',collect());document.getElementById('result').textContent=result.message||'Saved. Restart if requested.';cfg=await api('/api/config');}catch(e){document.getElementById('result').textContent='Error: '+e.message;}}
 async function scanBle(){try{await api('/api/ble/scan','POST',{});setTimeout(async()=>{let d=await api('/api/ble/scan');document.getElementById('bleDevices').innerHTML=d.map(x=>'<button onclick="document.getElementById(\'registeredItag\').value=\''+x.address+'\'">'+(x.name||'Unknown')+' · '+x.address+' · '+x.rssi+' dBm · data '+x.manufacturer+'</button>').join('');},2500);}catch(e){alert(e.message);}}
 async function refreshStatus(){try{let s=await api('/api/status');let lines=['MQTT: '+(s.mqttConnected?'Connected':'Disconnected')];s.fans.forEach(f=>lines.push(f.fanId+': '+(f.configured?f.state+' · speed '+f.speed+' · target '+f.targetSpeed:'GPIO profile incomplete')));document.getElementById('fanStatus').textContent=lines.join(' | ');}catch(e){document.getElementById('fanStatus').textContent='Status error: '+e.message;}}
-async function sendFan(){try{await api('/api/fan/command','POST',{fanIndex:+document.getElementById('manualFan').value,speed:+document.getElementById('manualSpeed').value});document.getElementById('fanStatus').textContent='Command queued';setTimeout(refreshStatus,300);}catch(e){alert(e.message);}}
+async function sendFan(){try{await api('/api/fan/command','POST',{fanIndex:+document.getElementById('manualFan').value,speed:+document.getElementById('manualSpeed').value});document.getElementById('fanStatus').textContent='Command queued';setTimeout(refreshStatus,1200);}catch(e){alert(e.message);}}
 async function restart(){try{await api('/api/restart','POST',{});}catch(e){document.getElementById('result').textContent='Restart requested.';}}
-load().catch(e=>document.getElementById('result').textContent=e.message);
+load().then(refreshStatus).catch(e=>document.getElementById('result').textContent=e.message);
 </script></body></html>
 )HTML";
 }
