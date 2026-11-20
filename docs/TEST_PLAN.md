@@ -28,6 +28,8 @@
 ## Inputs and arbitration
 - Five physical buttons debounce and map to OFF/Speed 1–4.
 - WebUI and MQTT command can turn fan ON when iTag is absent.
+- WebUI status endpoint reports MQTT connectivity and each fan's configured/state/current/target speed.
+- WebUI command response is queued and the displayed fan state changes to the requested speed after the break-before-make interval.
 - Presence OFF cannot override WebUI/MQTT in the same command batch.
 - A manual command while iTag is absent suppresses the pending one-shot Presence OFF until the iTag is detected near again.
 - MQTT disabled ignores MQTT commands.
