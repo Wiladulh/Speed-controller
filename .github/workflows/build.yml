@@ -39,6 +39,21 @@ jobs:
       - name: Build firmware
         run: pio run -e ${{ matrix.environment }}
 
+      - name: Prepare ESP32-C3 Super Mini firmware file
+        if: matrix.environment == 'esp32-c3-super-mini'
+        run: |
+          mkdir -p dist
+          cp .pio/build/esp32-c3-super-mini/firmware.bin dist/esp32-c3-super-mini.bin
+
+      - name: Upload ESP32-C3 Super Mini firmware
+        if: matrix.environment == 'esp32-c3-super-mini'
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-c3-super-mini-firmware
+          path: dist/esp32-c3-super-mini.bin
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Run native click sequence tests
         if: matrix.environment == 'esp32dev'
         run: pio test -e native
