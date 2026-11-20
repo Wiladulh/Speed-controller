@@ -1,7 +1,7 @@
 # Test Plan
 
 ## Build and static validation
-- PlatformIO builds for generic classic ESP32, ESP32-S3 DevKitC-1, and ESP32-C3 DevKitM-1.
+- PlatformIO build for the default ESP32-C3 Super Mini environment and alternate classic ESP32 / ESP32-S3 profiles.
 - Native click sequence unit tests via pio test -e native.
 - Verify library dependency versions and reproducible build.
 - Review warnings and compile errors before claiming PASS.
@@ -10,7 +10,9 @@
 - First boot creates unique AP and WebUI credentials and prints them to Serial.
 - Basic authentication protects all API routes.
 - AP + STA operation and Wi-Fi reconnect behavior.
-- GPIO dropdowns contain only the selected compile-time board profile's allowed pins.
+- GPIO output dropdown contains only GPIO3–6 and input dropdown only GPIO0, GPIO1, GPIO2, GPIO7, GPIO10 on the default C3 profile.
+- GPIO2 external bias preserves HIGH boot level.
+- Invalid fanCount values are rejected before configuration array access.
 - Duplicate/reserved GPIO assignments rejected.
 - Incomplete hardware profile persists but fan output remains locked.
 - Secrets are not returned by the configuration GET endpoint.
@@ -36,6 +38,8 @@
 - Authentication, reconnect, Last Will, retained state.
 - Retained set commands ignored.
 - Only configured fan command topics are subscribed.
+- Changing fanCount or a fan ID in WebUI causes MQTT subscriptions to be rebuilt using the new topic set.
+- WebUI and MQTT commands are accepted only for configured fans and available speed values.
 - MQTT disconnect does not alter fan state or local controls.
 
 ## BLE
