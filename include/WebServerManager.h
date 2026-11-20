@@ -28,4 +28,5 @@ private:
     void handleGpioOptions();
     void handleBleRegister();
     void handleFanCommand();
+    void handleStatusGet();
 };
