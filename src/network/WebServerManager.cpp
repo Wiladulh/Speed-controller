@@ -1,6 +1,7 @@
 #include "WebServerManager.h"
 
 #include <ArduinoJson.h>
+#include <cstring>
 #include <WiFi.h>
 
 #include "BoardProfile.h"
