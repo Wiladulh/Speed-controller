@@ -31,7 +31,7 @@ void ButtonManager::service(uint32_t nowMs) {
             if (raw != state.stablePressed && static_cast<uint32_t>(nowMs - state.changedAt) >= 50) {
                 state.stablePressed = raw;
                 if (raw && !commands_->enqueue({f, static_cast<uint8_t>(b), CommandSource::Button})) {
-                    Serial.printf("Button command dropped: queue full for fan %u.\\n", f + 1);
+                    Serial.printf("Button command dropped: queue full for fan %u.\n", f + 1);
                 }
             }
         }
