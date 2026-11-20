@@ -141,6 +141,10 @@ void WebServerManager::handleConfigPost() {
     if (doc["presenceRssiThreshold"].is<int8_t>()) next.presenceRssiThreshold = doc["presenceRssiThreshold"];
     if (doc["presenceTimeoutSeconds"].is<uint16_t>()) next.presenceTimeoutSeconds = doc["presenceTimeoutSeconds"];
     if (doc["fanCount"].is<uint8_t>()) next.fanCount = doc["fanCount"];
+    if (next.fanCount < 1 || next.fanCount > MAX_FANS) {
+        server_.send(400, "application/json", "{\"error\":\"Fan count must be 1-8\"}");
+        return;
+    }
 
     JsonArrayConst fans = doc["fans"].as<JsonArrayConst>();
     for (uint8_t i = 0; i < next.fanCount && i < fans.size(); ++i) {
