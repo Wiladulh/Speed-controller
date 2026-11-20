@@ -6,7 +6,7 @@ The default PlatformIO environment is `esp32-c3-super-mini`, using the ESP32-C3 
 - Relay-driver outputs: GPIO3, GPIO4, GPIO5, GPIO6.
 - Physical button inputs: GPIO0, GPIO1, GPIO2, GPIO7, GPIO10.
 
-This gives enough direct GPIO for one fan with four speed outputs and five buttons. GPIO2 is a strapping pin: the input circuit must preserve the required HIGH boot level and must not hold GPIO2 LOW during reset. Confirm the exact Super Mini clone's pin labels and schematic before wiring. GPIO8/9 are deliberately not offered because they are commonly used for onboard LED/BOOT functions or boot strapping.
+This gives enough direct GPIO for one fan with four speed outputs and five buttons. GPIO2 is a strapping pin: it is permitted only for an Active LOW button input with an external pull-up that preserves HIGH at reset. Do not hold that button while resetting or powering on the board. Confirm the exact Super Mini clone's pin labels and schematic before wiring. GPIO8/9 are deliberately not offered because they are commonly used for onboard LED/BOOT functions or boot strapping.
 
 The C3 Super Mini profile does not provide enough direct GPIO for a second complete fan. Additional fans require a suitable I/O expander or a board with more exposed GPIO. Do not bypass the allowlist by selecting arbitrary pins.
 
