@@ -253,7 +253,7 @@ bool ConfigManager::validate(const AppConfig& config, String& error) const {
         }
         if (fan.availableSpeeds < 2 || fan.availableSpeeds > 4) { error = "Each fan must use 2-4 speeds."; return false; }
         if (fan.deadTimeMs < 100 || fan.deadTimeMs > 10000) { error = "Dead time must be 100-10000 ms."; return false; }
-        for (uint8_t j = 0; j < fan.availableSpeeds; ++j) {
+        for (uint8_t j = 0; j < MAX_SPEEDS; ++j) {
             int pin = fan.speedPins[j];
             if (pin < 0) continue;
             if (!BoardProfile::isAllowedOutput(pin) || used[pin]) { error = "Speed GPIO is unavailable or duplicated."; return false; }
