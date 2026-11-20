@@ -43,6 +43,7 @@ private:
     uint32_t lastSeenAt_ = 0;
     int smoothedRssi_ = -127;
     bool present_ = false;
+    bool hasBeenPresent_ = false;
     bool absenceCommandSent_ = false;
     ItagClickSequence clickSequence_;
     void onAdvertisement(const NimBLEAdvertisedDevice* device);
