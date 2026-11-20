@@ -3,6 +3,9 @@
 #include <ArduinoJson.h>
 #include <cstring>
 
+extern const uint8_t rootca_crt_bundle_start[] asm("_binary_src_certs_x509_crt_bundle_bin_start");
+extern const uint8_t rootca_crt_bundle_end[] asm("_binary_src_certs_x509_crt_bundle_bin_end");
+
 void MqttManager::begin(const AppConfig& config, CommandManager& commands) {
     commands_ = &commands;
     applyConfig(config);
@@ -59,11 +62,6 @@ void MqttManager::configureClient() {
 
     const bool secure = config_.mqttTransport == MqttTransport::Wss ||
                         config_.mqttTransport == MqttTransport::Tls;
-    if (secure && !config_.mqttCaPem[0]) {
-        Serial.println("MQTT TLS disabled: provide a trusted CA certificate in WebUI.");
-        return;
-    }
-
     uri_ = String(
         config_.mqttTransport == MqttTransport::Ws ? "ws://" :
         config_.mqttTransport == MqttTransport::Wss ? "wss://" :
@@ -80,7 +78,18 @@ void MqttManager::configureClient() {
     client_.setCleanSession(true);
     if (config_.mqttUsername[0]) client_.setCredentials(config_.mqttUsername, config_.mqttPassword);
     else client_.setCredentials(nullptr, nullptr);
-    if (secure) client_.setCACert(config_.mqttCaPem);
+    if (secure) {
+        if (config_.mqttCaPem[0]) {
+            // Preserve support for a broker-specific CA supplied by the user.
+            client_.setCACert(config_.mqttCaPem);
+        } else {
+            // Use the PlatformIO-embedded public CA bundle; TLS verification stays enabled.
+            client_.setCACertBundle(
+                rootca_crt_bundle_start,
+                static_cast<size_t>(rootca_crt_bundle_end - rootca_crt_bundle_start)
+            );
+        }
+    }
 
     willTopic_ = String(config_.mqttBaseTopic) + "/" + config_.deviceId + "/status";
     client_.setWill(willTopic_.c_str(), 0, true, "offline");
