@@ -232,17 +232,6 @@ bool ConfigManager::validate(const AppConfig& config, String& error) const {
     if (!config.webUsername[0] || strlen(config.webPassword) < 8) { error = "WebUI credentials are required (password >= 8 characters)."; return false; }
     if (config.mqttPort == 0) { error = "MQTT port is invalid."; return false; }
     if (static_cast<uint8_t>(config.mqttTransport) > 3) { error = "MQTT transport is invalid."; return false; }
-    if (config.mqttEnabled && !config.mqttHost[0]) { error = "MQTT broker host is required when MQTT Control is enabled."; return false; }
-    if (config.mqttEnabled &&
-        (config.mqttTransport == MqttTransport::Wss || config.mqttTransport == MqttTransport::Tls) &&
-        !config.mqttCaPem[0]) {
-        error = "A trusted CA PEM is required for WSS/TLS when MQTT Control is enabled.";
-        return false;
-    }
-    if (config.mqttEnabled && (strchr(config.mqttHost, '/') || strchr(config.mqttHost, ' '))) {
-        error = "MQTT broker host must be a hostname or IP address without a scheme or path.";
-        return false;
-    }
     const size_t baseTopicLength = strlen(config.mqttBaseTopic);
     if (!baseTopicLength || config.mqttBaseTopic[0] == '/' ||
         config.mqttBaseTopic[baseTopicLength - 1] == '/' ||
