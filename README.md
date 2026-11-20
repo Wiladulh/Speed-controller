@@ -28,7 +28,7 @@ WebUI supports four selectable MQTT schemes:
 - TCP / MQTT (mqtt://)
 - TLS / MQTTS (mqtts://)
 
-Host, port, WebSocket path, credentials, and CA PEM are configurable. TLS/WSS requires a trusted CA PEM; certificate verification is not disabled. MQTT set commands are non-retained and retained commands are ignored.
+Host, port, WebSocket path, and credentials are configurable. WSS/TLS uses a public CA bundle embedded into each PlatformIO firmware build; certificate verification remains enabled. A broker-specific CA PEM can still be supplied in firmware configuration when required. MQTT set commands are non-retained and retained commands are ignored.
 
 See docs/MQTT_PROTOCOL.md.
 
