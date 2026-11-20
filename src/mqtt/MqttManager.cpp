@@ -38,6 +38,7 @@ void MqttManager::configureClient() {
 
     if (!callbacksRegistered_) {
         client_.onConnect([this](bool) {
+            ++connectionEpoch_;
             if (!config_.mqttEnabled) return;
             for (uint8_t i = 0; i < config_.fanCount; ++i) {
                 String filter = topicFor(i, "set");
@@ -107,6 +108,10 @@ void MqttManager::handleMessage(char* topic, char* payload, int retain, int, boo
 
 bool MqttManager::connected() const {
     return const_cast<PsychicMqttClient&>(client_).connected();
+}
+
+uint32_t MqttManager::connectionEpoch() const {
+    return connectionEpoch_;
 }
 
 String MqttManager::topicFor(uint8_t fanIndex, const char* suffix) const {
