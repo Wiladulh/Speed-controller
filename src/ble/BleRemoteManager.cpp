@@ -25,6 +25,7 @@ void BleRemoteManager::applyConfig(const AppConfig& config) {
     config_ = config;
     if (remoteChanged) {
         present_ = false;
+        hasBeenPresent_ = false;
         smoothedRssi_ = -127;
         lastSeenAt_ = millis();
         absenceCommandSent_ = false;
@@ -36,10 +37,12 @@ void BleRemoteManager::setPresenceEnabled(bool enabled) {
     config_.blePresenceEnabled = enabled;
     if (!enabled) {
         present_ = false;
+        hasBeenPresent_ = false;
         absenceCommandSent_ = false;
     } else {
         lastSeenAt_ = millis();
         present_ = false;
+        hasBeenPresent_ = false;
         absenceCommandSent_ = false;
     }
 }
@@ -87,6 +90,7 @@ void BleRemoteManager::onAdvertisement(const NimBLEAdvertisedDevice* device) {
         if (near) {
             lastSeenAt_ = millis();
             present_ = true;
+            hasBeenPresent_ = true;
             absenceCommandSent_ = false;
         }
     }
@@ -107,7 +111,7 @@ void BleRemoteManager::service(uint32_t nowMs) {
             }
         }
     }
-    if (!config_.blePresenceEnabled || !config_.registeredItag[0]) return;
+    if (!config_.blePresenceEnabled || !config_.registeredItag[0] || !hasBeenPresent_) return;
     if (!absenceCommandSent_ &&
         static_cast<uint32_t>(nowMs - lastSeenAt_) >= config_.presenceTimeoutSeconds * 1000UL) {
         present_ = false;
