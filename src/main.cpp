@@ -28,9 +28,8 @@ void setup() {
     configManager.begin();
     const AppConfig& config = configManager.get();
 
-    commandManager.begin();
-    wifiManager.begin(config);
-
+    // Initialize every configured relay bank before starting services. This
+    // guarantees the outputs are driven OFF even if queue allocation fails.
     for (uint8_t i = 0; i < config.fanCount; ++i) {
         FanHardwareProfile profile{};
         profile.availableSpeeds = config.fans[i].availableSpeeds;
@@ -44,6 +43,16 @@ void setup() {
         }
     }
 
+    if (!commandManager.begin()) {
+        Serial.println("FATAL: command queue allocation failed; outputs remain OFF.");
+        // Fail closed: do not start Wi-Fi, WebUI, MQTT, BLE, or input handlers
+        // without the central command queue.
+        while (true) {
+            delay(1000);
+        }
+    }
+
+    wifiManager.begin(config);
     buttonManager.begin(config, commandManager);
     bleManager.begin(config, commandManager);
     mqttManager.begin(config, commandManager);
