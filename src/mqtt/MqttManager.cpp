@@ -19,7 +19,16 @@ void MqttManager::applyConfig(const AppConfig& config) {
         config_.mqttEnabled != config.mqttEnabled ||
         strcmp(config_.mqttCaPem, config.mqttCaPem) != 0 ||
         strcmp(config_.mqttBaseTopic, config.mqttBaseTopic) != 0 ||
-        strcmp(config_.deviceId, config.deviceId) != 0;
+        strcmp(config_.deviceId, config.deviceId) != 0 ||
+        config_.fanCount != config.fanCount;
+    if (!changed) {
+        for (uint8_t i = 0; i < config.fanCount; ++i) {
+            if (strcmp(config_.fans[i].id, config.fans[i].id) != 0) {
+                changed = true;
+                break;
+            }
+        }
+    }
     config_ = config;
     if (changed) configureClient();
 }
