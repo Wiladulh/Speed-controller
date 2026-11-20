@@ -37,7 +37,7 @@ small{color:#9fb0c7}.switch{width:auto}.fan{border-top:1px solid #40516a;margin-
 <div class="grid"><div><label>Registered iTag address</label><input id="registeredItag"></div><div><label>RSSI threshold (calibrate around 2 m)</label><input id="presenceRssiThreshold" type="number"></div>
 <div><label>Absence timeout (seconds)</label><input id="presenceTimeoutSeconds" type="number"></div></div><label>Fans controlled by this iTag</label><div id="bleFanMapping" class="grid"></div></section>
 <section><h2>Manual fan control</h2><div class="grid"><div><label>Fan index</label><select id="manualFan"><option value="0">Fan 1</option><option value="1">Fan 2</option><option value="2">Fan 3</option><option value="3">Fan 4</option><option value="4">Fan 5</option><option value="5">Fan 6</option><option value="6">Fan 7</option><option value="7">Fan 8</option></select></div>
-<div><label>Speed</label><select id="manualSpeed"><option value="0">OFF</option><option value="1">Speed 1</option><option value="2">Speed 2</option><option value="3">Speed 3</option><option value="4">Speed 4</option></select></div></div><button onclick="sendFan()">Apply speed</button></section>
+<div><label>Speed</label><select id="manualSpeed"><option value="0">OFF</option><option value="1">Speed 1</option><option value="2">Speed 2</option><option value="3">Speed 3</option><option value="4">Speed 4</option></select></div></div><button onclick="sendFan()">Apply speed</button><button onclick="refreshStatus()">Refresh fan / MQTT status</button><p id="fanStatus"></p></section>
 <section><button onclick="save()">Save configuration</button><button onclick="restart()">Restart ESP32 to apply hardware/Wi-Fi changes</button><p id="result"></p></section>
 <script>
 let cfg={},outputPins=[],inputPins=[];
@@ -53,7 +53,8 @@ function collect(){let n=+document.getElementById('fanCount').value;let fans=[];
 return {blePresenceEnabled:document.getElementById('blePresence').checked,bleFanMask:Array.from(document.querySelectorAll('.bleFan:checked')).reduce((mask,e)=>mask|(1<<Number(e.value)),0),mqttEnabled:document.getElementById('mqttEnabled').checked,wifiSsid:document.getElementById('wifiSsid').value,wifiPassword:document.getElementById('wifiPassword').value,apSsid:document.getElementById('apSsid').value,apPassword:document.getElementById('apPassword').value,mqttTransport:+document.getElementById('mqttTransport').value,mqttHost:document.getElementById('mqttHost').value,mqttPort:+document.getElementById('mqttPort').value,mqttPath:document.getElementById('mqttPath').value,webUsername:document.getElementById('webUsername').value,webPassword:document.getElementById('webPassword').value,mqttUsername:document.getElementById('mqttUsername').value,mqttPassword:document.getElementById('mqttPassword').value,mqttCaPem:document.getElementById('mqttCaPem').value,mqttBaseTopic:document.getElementById('mqttBaseTopic').value,deviceId:document.getElementById('deviceId').value,registeredItag:document.getElementById('registeredItag').value,presenceRssiThreshold:+document.getElementById('presenceRssiThreshold').value,presenceTimeoutSeconds:+document.getElementById('presenceTimeoutSeconds').value,fanCount:n,fans};}
 async function save(){try{let result=await api('/api/config','POST',collect());document.getElementById('result').textContent=result.message||'Saved. Restart if requested.';cfg=await api('/api/config');}catch(e){document.getElementById('result').textContent='Error: '+e.message;}}
 async function scanBle(){try{await api('/api/ble/scan','POST',{});setTimeout(async()=>{let d=await api('/api/ble/scan');document.getElementById('bleDevices').innerHTML=d.map(x=>'<button onclick="document.getElementById(\'registeredItag\').value=\''+x.address+'\'">'+(x.name||'Unknown')+' · '+x.address+' · '+x.rssi+' dBm · data '+x.manufacturer+'</button>').join('');},2500);}catch(e){alert(e.message);}}
-async function sendFan(){try{await api('/api/fan/command','POST',{fanIndex:+document.getElementById('manualFan').value,speed:+document.getElementById('manualSpeed').value});}catch(e){alert(e.message);}}
+async function refreshStatus(){try{let s=await api('/api/status');let lines=['MQTT: '+(s.mqttConnected?'Connected':'Disconnected')];s.fans.forEach(f=>lines.push(f.fanId+': '+(f.configured?f.state+' · speed '+f.speed+' · target '+f.targetSpeed:'GPIO profile incomplete')));document.getElementById('fanStatus').textContent=lines.join(' | ');}catch(e){document.getElementById('fanStatus').textContent='Status error: '+e.message;}}
+async function sendFan(){try{await api('/api/fan/command','POST',{fanIndex:+document.getElementById('manualFan').value,speed:+document.getElementById('manualSpeed').value});document.getElementById('fanStatus').textContent='Command queued';setTimeout(refreshStatus,300);}catch(e){alert(e.message);}}
 async function restart(){try{await api('/api/restart','POST',{});}catch(e){document.getElementById('result').textContent='Restart requested.';}}
 load().catch(e=>document.getElementById('result').textContent=e.message);
 </script></body></html>
@@ -93,6 +94,7 @@ void WebServerManager::begin(ConfigManager& config, MqttManager& mqtt, BleRemote
     });
     server_.on("/api/ble/register", HTTP_POST, [this]() { handleBleRegister(); });
     server_.on("/api/fan/command", HTTP_POST, [this]() { handleFanCommand(); });
+    server_.on("/api/status", HTTP_GET, [this]() { handleStatusGet(); });
     server_.on("/api/restart", HTTP_POST, [this]() {
         if (!authenticate()) return;
         server_.send(202, "application/json", "{\"restarting\":true}");
@@ -206,6 +208,38 @@ void WebServerManager::handleBleRegister() {
     }
     ble_->applyConfig(config_->get());
     server_.send(200, "application/json", "{\"registered\":true}");
+}
+
+void WebServerManager::handleStatusGet() {
+    if (!authenticate()) return;
+    JsonDocument doc;
+    doc["mqttConnected"] = mqtt_ && mqtt_->connected();
+    JsonArray fans = doc["fans"].to<JsonArray>();
+    const uint8_t fanCount = config_->get().fanCount;
+    for (uint8_t i = 0; i < fanCount; ++i) {
+        JsonObject item = fans.add<JsonObject>();
+        item["fanId"] = config_->get().fans[i].id;
+        const bool configured = fans_ && fans_[i].isConfigured();
+        item["configured"] = configured;
+        if (!configured) {
+            item["state"] = "unconfigured";
+            item["speed"] = 0;
+            item["targetSpeed"] = 0;
+            continue;
+        }
+        switch (fans_[i].state()) {
+            case FanRunState::Off: item["state"] = "off"; break;
+            case FanRunState::Transition: item["state"] = "transition"; break;
+            case FanRunState::Running: item["state"] = "running"; break;
+            case FanRunState::Error: item["state"] = "error"; break;
+            case FanRunState::Unconfigured: item["state"] = "unconfigured"; break;
+        }
+        item["speed"] = fans_[i].currentSpeed();
+        item["targetSpeed"] = fans_[i].targetSpeed();
+    }
+    String body;
+    serializeJson(doc, body);
+    server_.send(200, "application/json", body);
 }
 
 void WebServerManager::handleFanCommand() {
