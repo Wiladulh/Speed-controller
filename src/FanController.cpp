@@ -32,21 +32,24 @@ bool FanController::begin(const FanHardwareProfile& profile) {
     configured_ = false;
     currentSpeed_ = 0;
     targetSpeed_ = 0;
-
-    if (!isValidProfile(profile)) {
-        state_ = FanRunState::Unconfigured;
-        return false;
-    }
-
     profile_ = profile;
 
-    // Preload the inactive output level before switching each pin to OUTPUT.
-    const int inactiveLevel = profile_.relayActiveLevel == HIGH ? LOW : HIGH;
-    for (uint8_t i = 0; i < profile_.availableSpeeds; ++i) {
-        const int pin = profile_.relayPins[i];
-        digitalWrite(pin, inactiveLevel);
-        pinMode(pin, OUTPUT);
-        digitalWrite(pin, inactiveLevel);
+    // Drive every assigned relay pin inactive even when another required
+    // speed pin is missing and the fan profile must remain locked.
+    if (profile_.relayActiveLevel == HIGH || profile_.relayActiveLevel == LOW) {
+        const int inactiveLevel = profile_.relayActiveLevel == HIGH ? LOW : HIGH;
+        for (uint8_t i = 0; i < 4; ++i) {
+            const int pin = profile_.relayPins[i];
+            if (pin < 0) continue;
+            digitalWrite(pin, inactiveLevel);
+            pinMode(pin, OUTPUT);
+            digitalWrite(pin, inactiveLevel);
+        }
+    }
+
+    if (!isValidProfile(profile_)) {
+        state_ = FanRunState::Unconfigured;
+        return false;
     }
 
     configured_ = true;
