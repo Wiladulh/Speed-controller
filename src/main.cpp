@@ -20,7 +20,7 @@ WebServerManager webServer;
 FanController fanControllers[MAX_FANS];
 ButtonManager buttonManager;
 uint8_t lastPublishedSpeed[MAX_FANS] = {255, 255, 255, 255, 255, 255, 255, 255};
-bool mqttWasConnected = false;
+uint32_t lastMqttConnectionEpoch = 0;
 }
 
 void setup() {
@@ -101,13 +101,13 @@ void loop() {
         }
     }
 
-    const bool mqttConnected = mqttManager.connected();
-    if (mqttConnected && !mqttWasConnected) {
+    const uint32_t connectionEpoch = mqttManager.connectionEpoch();
+    if (mqttManager.connected() && connectionEpoch != lastMqttConnectionEpoch) {
         for (uint8_t i = 0; i < config.fanCount; ++i) {
             if (fanControllers[i].isConfigured()) {
                 mqttManager.publishFanState(config, i, fanControllers[i].currentSpeed());
             }
         }
+        lastMqttConnectionEpoch = connectionEpoch;
     }
-    mqttWasConnected = mqttConnected;
 }
