@@ -86,7 +86,10 @@ void loop() {
     for (uint8_t i = 0; i < config.fanCount; ++i) {
         if (selectedPriority[i] < 0 || !fanControllers[i].isConfigured()) continue;
         if (selected[i].source != CommandSource::Presence) bleManager.noteManualOverride();
-        fanControllers[i].requestSpeed(selected[i].speed);
+        if (!fanControllers[i].requestSpeed(selected[i].speed)) {
+            Serial.printf("Command rejected by fan %u controller: speed %u.\\n",
+                          i + 1, selected[i].speed);
+        }
     }
 
     for (uint8_t i = 0; i < config.fanCount; ++i) {
