@@ -67,15 +67,16 @@ A modular ESP32 firmware for independently controlled fans. Board profiles, fan 
 
 - PlatformIO.
 - Arduino framework for ESP32.
-- esp32dev is only a generic initial compile target, not a final board selection.
-- WebUI has GPIO dropdowns for each speed output and each of the five buttons.
-- Initial GPIO options are a conservative generic classic ESP32 DevKit profile only; other board families require their own verified pin profile.
+- Current default target: ESP32-C3 Super Mini, compiled with the ESP32-C3 DevKitM-1 MCU definition.
+- GPIO profile: relay outputs GPIO3–6; button inputs GPIO0, GPIO1, GPIO2, GPIO7, GPIO10. GPIO2 must remain HIGH during reset.
+- WebUI has separate GPIO dropdowns for each speed output and each of the five buttons.
+- One complete fan fits the direct GPIO budget. Additional fans require an I/O expander or a board with more exposed GPIO; do not select unlisted pins.
 - Up to eight logical fan profiles are supported in configuration; real capacity is limited by the selected board's available IO and any verified expander hardware.
 - Incomplete GPIO profiles may be saved, but the corresponding fan remains locked OFF.
 
 ## 5. Unresolved pre-flight items
 
-1. Exact ESP32 board/module and first reference board.
+1. Confirm the exact ESP32-C3 Super Mini revision and pin labels against its schematic.
 2. Fan wiring diagram and whether the speed inputs are mutually exclusive by electrical design.
 3. Relay/contactor/driver type, contact ratings, active polarity, and safe output levels.
 4. GPIO map and any IO expander decision.
