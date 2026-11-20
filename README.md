@@ -4,7 +4,7 @@ Modular PlatformIO firmware for a configurable multi-fan speed controller.
 
 ## Firmware status
 
-The repository contains the initial firmware foundation, local WebUI/configuration, GPIO selection, physical button input, BLE scanning/Presence, and MQTT transport integration. Hardware-specific validation and the exact iTag click protocol remain dependent on the selected ESP32 board, relay/fan circuit, and captured iTag advertising packets.
+The repository contains the integrated firmware foundation for WebUI, MQTT command transport, Wi-Fi AP+STA, fan relay state machine, configuration persistence, and physical button inputs. The current default target is ESP32-C3 Super Mini. WebUI/MQTT hardware validation is the next gate; the exact iTag click decoder remains deferred until those tests pass.
 
 ## Confirmed control design
 
@@ -34,19 +34,20 @@ See docs/MQTT_PROTOCOL.md.
 
 ## GPIO configuration
 
-WebUI provides separate GPIO dropdowns for Speed 1–4 and the five buttons. The initial dropdown list is a conservative generic classic ESP32 DevKit profile, not a universal list for every ESP32 family. GPIO assignments must be unique. Incomplete hardware profiles can be saved during setup, but the affected fan remains locked OFF until its output profile is complete.
+WebUI provides separate GPIO dropdowns for Speed 1–4 and the five buttons. The default ESP32-C3 Super Mini profile reserves GPIO3–6 for relay outputs and GPIO0, GPIO1, GPIO2, GPIO7, GPIO10 for buttons. GPIO2 is a strapping pin and must remain HIGH during reset. One complete fan fits the direct GPIO budget; additional fans require an I/O expander or a board with more exposed GPIO. Incomplete hardware profiles can be saved during setup, but the affected fan remains locked OFF until its output profile is complete.
 
 The software supports up to eight logical fan profiles. Actual usable fan count depends on board GPIO availability, drivers, buttons, and any future IO expander hardware.
 
 ## Build
 
-Install PlatformIO and build one of the supported initial board profiles:
+Install PlatformIO and build the current target or alternate profiles:
 
+    pio run
+    pio run -e esp32-c3-super-mini
     pio run -e esp32dev
     pio run -e esp32-s3-devkitc-1
-    pio run -e esp32-c3-devkitm-1
 
-The default environment is the generic classic ESP32 DevKit profile. Actual board/module pinouts must still be checked before assigning GPIOs. On first boot, the setup AP and WebUI credentials are generated uniquely and printed to the Serial monitor at 115200 baud.
+The default environment is ESP32-C3 Super Mini (using the ESP32-C3 DevKitM-1 MCU definition). Actual board/module pinouts must still be checked before assigning GPIOs. On first boot, the setup AP and WebUI credentials are generated uniquely and printed to the Serial monitor at 115200 baud.
 
 ## Important remaining hardware/model-specific work
 
