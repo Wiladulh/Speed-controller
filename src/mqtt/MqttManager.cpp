@@ -104,7 +104,7 @@ void MqttManager::handleMessage(char* topic, char* payload, int retain, int, boo
     uint8_t speed = doc["speed"].as<uint8_t>();
     if (speed > config_.fans[fanIndex].availableSpeeds) return;
     if (!commands_->enqueue({static_cast<uint8_t>(fanIndex), speed, CommandSource::Mqtt})) {
-        Serial.printf("MQTT command dropped: queue full for fan %s.\\n", fanId.c_str());
+        Serial.printf("MQTT command dropped: queue full for fan %s.\n", fanId.c_str());
     }
 }
 
