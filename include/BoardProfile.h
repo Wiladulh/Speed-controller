@@ -45,4 +45,11 @@ public:
         }
         return false;
     }
+
+    static bool isAllowedInput(int pin, bool activeLow) {
+#if defined(BOARD_PROFILE_ESP32_C3)
+        if (pin == 2 && !activeLow) return false;
+#endif
+        return isAllowedInput(pin);
+    }
 };
