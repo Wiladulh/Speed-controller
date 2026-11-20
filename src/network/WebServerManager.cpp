@@ -163,6 +163,21 @@ void WebServerManager::handleConfigPost() {
         for (uint8_t j = 0; j < BUTTON_COUNT && j < buttonPins.size(); ++j) next.fans[i].buttonPins[j] = buttonPins[j].as<int8_t>();
     }
 
+    if (next.mqttEnabled && !next.mqttHost[0]) {
+        server_.send(400, "application/json", "{\"error\":\"MQTT broker host is required when MQTT Control is enabled.\"}");
+        return;
+    }
+    if (next.mqttEnabled &&
+        (next.mqttTransport == MqttTransport::Wss || next.mqttTransport == MqttTransport::Tls) &&
+        !next.mqttCaPem[0]) {
+        server_.send(400, "application/json", "{\"error\":\"A trusted CA PEM is required for WSS/TLS.\"}");
+        return;
+    }
+    if (next.mqttEnabled && (strchr(next.mqttHost, '/') || strchr(next.mqttHost, ' '))) {
+        server_.send(400, "application/json", "{\"error\":\"MQTT host must not include a scheme or path.\"}");
+        return;
+    }
+
     String error;
     if (!config_->validate(next, error)) {
         JsonDocument response;
