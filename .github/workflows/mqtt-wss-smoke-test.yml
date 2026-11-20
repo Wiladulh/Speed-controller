@@ -1,0 +1,97 @@
+name: MQTT WSS Broker Smoke Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-test-message:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install MQTT client
+        run: python -m pip install --disable-pip-version-check paho-mqtt==2.1.0
+
+      - name: Connect over WSS and publish test message
+        env:
+          MQTT_HOST: mqtt.giebux.my.id
+          MQTT_PORT: "443"
+          MQTT_USERNAME: ${{ secrets.MQTT_USERNAME }}
+          MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
+          MQTT_TOPIC: giebux/github/act
+        run: |
+          python - <<'PY'
+          import os
+          import threading
+          import uuid
+
+          import paho.mqtt.client as mqtt
+
+          required = ("MQTT_USERNAME", "MQTT_PASSWORD")
+          missing = [name for name in required if not os.environ.get(name)]
+          if missing:
+              raise SystemExit(
+                  "Missing GitHub Actions secrets: " + ", ".join(missing)
+              )
+
+          connected = threading.Event()
+          connection_error = []
+
+          def on_connect(client, userdata, flags, reason_code, properties):
+              if reason_code != 0:
+                  connection_error.append(str(reason_code))
+              else:
+                  connected.set()
+
+          client = mqtt.Client(
+              mqtt.CallbackAPIVersion.VERSION2,
+              client_id="github-wss-test-" + uuid.uuid4().hex[:12],
+              transport="websockets",
+          )
+          client.username_pw_set(
+              os.environ["MQTT_USERNAME"],
+              os.environ["MQTT_PASSWORD"],
+          )
+          client.ws_set_options(path="/")
+          client.tls_set()
+          client.on_connect = on_connect
+
+          try:
+              print("Connecting to broker using WSS (TLS verification enabled)...")
+              client.connect(
+                  os.environ["MQTT_HOST"],
+                  int(os.environ["MQTT_PORT"]),
+                  keepalive=30,
+              )
+              client.loop_start()
+
+              if not connected.wait(timeout=20):
+                  detail = connection_error[0] if connection_error else "timeout"
+                  raise SystemExit("MQTT CONNACK not received: " + detail)
+
+              print("MQTT connection established.")
+              info = client.publish(
+                  os.environ["MQTT_TOPIC"],
+                  payload="test success",
+                  qos=0,
+                  retain=False,
+              )
+              if info.rc != mqtt.MQTT_ERR_SUCCESS:
+                  raise SystemExit("Publish rejected locally: " + str(info.rc))
+              info.wait_for_publish(timeout=15)
+              if not info.is_published():
+                  raise SystemExit("Publish did not complete before timeout.")
+
+              print("PUBLISH completed: topic=giebux/github/act, payload=test success")
+          finally:
+              if client.is_connected():
+                  client.disconnect()
+              client.loop_stop()
+          PY
