@@ -273,7 +273,7 @@ bool ConfigManager::validate(const AppConfig& config, String& error) const {
         for (uint8_t j = 0; j < BUTTON_COUNT; ++j) {
             int pin = fan.buttonPins[j];
             if (pin == -1) continue;
-            if (pin < 0 || !BoardProfile::isAllowedInput(pin) || used[pin]) { error = "Button GPIO is unavailable or duplicated."; return false; }
+            if (pin < 0 || !BoardProfile::isAllowedInput(pin, fan.buttonActiveLow) || used[pin]) { error = "Button GPIO is unavailable, unsafe for its polarity, or duplicated."; return false; }
             used[pin] = true;
         }
     }
