@@ -1,10 +1,20 @@
 # Hardware Configuration and Safety
 
+## Current target: ESP32-C3 Super Mini
+
+The default PlatformIO environment is `esp32-c3-super-mini`, using the ESP32-C3 DevKitM-1 board definition for the ESP32-C3 MCU. The firmware profile reserves:
+- Relay-driver outputs: GPIO3, GPIO4, GPIO5, GPIO6.
+- Physical button inputs: GPIO0, GPIO1, GPIO2, GPIO7, GPIO10.
+
+This gives enough direct GPIO for one fan with four speed outputs and five buttons. GPIO2 is a strapping pin: the input circuit must preserve the required HIGH boot level and must not hold GPIO2 LOW during reset. Confirm the exact Super Mini clone's pin labels and schematic before wiring. GPIO8/9 are deliberately not offered because they are commonly used for onboard LED/BOOT functions or boot strapping.
+
+The C3 Super Mini profile does not provide enough direct GPIO for a second complete fan. Additional fans require a suitable I/O expander or a board with more exposed GPIO. Do not bypass the allowlist by selecting arbitrary pins.
+
 ## GPIO selection
 
-The WebUI offers GPIO dropdowns for Speed 1–4 and the five buttons (OFF, Speed 1–4). PlatformIO includes initial compile-time profiles for generic classic ESP32 DevKit, ESP32-S3 DevKitC-1, and ESP32-C3 DevKitM-1. Each build environment supplies its own conservative GPIO allowlist to the WebUI. These are starting profiles only; verify the exact module, board revision, onboard peripherals, flash/PSRAM configuration, and schematic. ESP32-S2/C6 and other boards are not included yet.
+The WebUI provides separate dropdown lists for relay outputs and button inputs. Pins must be unique across all speed and button functions. Unassigned pins are allowed during initial setup, but the associated fan remains locked until every configured speed output is assigned and the profile passes validation.
 
-Pins must be unique across speed and button functions. Unassigned pins are allowed during initial setup, but the associated fan remains locked until every configured speed output is assigned and the profile passes validation.
+Other PlatformIO profiles for classic ESP32 and ESP32-S3 remain available for future board targets, but they are not the current default.
 
 ## Relay polarity
 
