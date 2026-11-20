@@ -15,7 +15,7 @@ This ensures a Presence timeout cannot override a WebUI or MQTT command received
 ## Modules
 
 - `ConfigManager`: versioned JSON configuration in Preferences; validation and persistence.
-- `BoardProfile`: initial conservative GPIO allowlist for classic ESP32 DevKit.
+- `BoardProfile`: separate relay-output and button-input allowlists; current default is ESP32-C3 Super Mini.
 - `FanController`: per-fan break-before-make relay state machine.
 - `ButtonManager`: five debounced physical inputs per fan.
 - `BleRemoteManager`: BLE scanning, remote registration identity, RSSI smoothing, Presence timeout, and configurable fan mapping.
@@ -26,7 +26,7 @@ This ensures a Presence timeout cannot override a WebUI or MQTT command received
 
 ## Hardware profiles
 
-The current generic profile exposes a curated set of output-capable classic ESP32 GPIOs. GPIO options are selected in WebUI for each speed and each physical button. Pin uniqueness is validated globally across configured fans. The firmware does not assume speed number equals GPIO number.
+The current default ESP32-C3 Super Mini profile exposes GPIO3–6 for relay outputs and GPIO0, GPIO1, GPIO2, GPIO7, GPIO10 for button inputs. GPIO2 is a strapping pin and must retain its HIGH boot level. GPIO options are selected separately in WebUI for each speed and each physical button. Pin uniqueness is validated globally across configured fans. One complete fan fits the direct GPIO budget; more fans require an I/O expander or a larger board. The firmware does not assume speed number equals GPIO number.
 
 The logical configuration supports up to eight fan profiles. The actual number that can be activated depends on available pins, board variant, relay drivers, and any future IO expander support. An unconfigured or incomplete fan profile remains locked OFF.
 
