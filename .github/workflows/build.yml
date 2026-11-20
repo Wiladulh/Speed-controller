@@ -1,0 +1,43 @@
+name: Firmware Build
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: firmware-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - esp32dev
+          - esp32-s3-devkitc-1
+          - esp32-c3-devkitm-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PlatformIO
+        run: python -m pip install --upgrade platformio
+
+      - name: Build firmware
+        run: pio run -e ${{ matrix.environment }}
+
+      - name: Run native click sequence tests
+        if: matrix.environment == 'esp32dev'
+        run: pio test -e native
